@@ -1,10 +1,11 @@
 #include "CsvParser.h"
 
 #include <cassert>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
-
 void testSplitCsvLineSimple()
 {
     const std::vector<std::string> cells = splitCsvLineSimple("name,age,city");
@@ -68,6 +69,38 @@ void testParseEmptyCsv()
     assert(table.rows.empty());
 }
 
+void testLoadCsvFromFile()
+{
+    const std::string filename = "test_load_csv.csv";
+
+    {
+        std::ofstream file(filename);
+        file << "name,age\n";
+        file << "Alice,20\n";
+        file << "Bob,22\n";
+    }
+
+    const std::optional<CsvTable> table = loadCsvFromFile(filename);
+
+    assert(table.has_value());
+    assert(table->headers.size() == 2);
+    assert(table->headers[0] == "name");
+    assert(table->headers[1] == "age");
+
+    assert(table->rows.size() == 2);
+    assert(table->rows[0].cells[0] == "Alice");
+    assert(table->rows[0].cells[1] == "20");
+
+    std::filesystem::remove(filename);
+}
+
+void testLoadMissingCsvFileReturnsNullopt()
+{
+    const std::optional<CsvTable> table = loadCsvFromFile("missing_file_hopefully.csv");
+
+    assert(!table.has_value());
+}
+
 int main()
 {
     testSplitCsvLineSimple();
@@ -75,5 +108,7 @@ int main()
     testParseEmptyCsv();
     testSplitEmptyCsvLineSimple();
     testParseOnlyHeaderCsvTableSimple();
+    testLoadCsvFromFile();
+    testLoadMissingCsvFileReturnsNullopt();
     return 0;
 }
