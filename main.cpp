@@ -10,6 +10,7 @@ void printUsage()
 {
     std::cout << "Usage:\n";
     std::cout << "  CsvAnalyzerApp summary <csv_file>\n";
+    std::cout << "  CsvAnalyzerApp sum <csv_file> <column_name>\n";
 }
 
 void printSummary(const CsvTable &table)
@@ -48,6 +49,26 @@ int main(int argc, char *argv[])
         }
 
         printSummary(*table);
+        return 0;
+    }
+    if (command == "sum")
+    {
+        const std::optional<CsvTable> table = loadCsvFromFile(filename);
+
+        if (!table)
+        {
+            std::cout << "Could not open file\n";
+            return 1;
+        }
+        std::optional<double> sum = sumColumn(*table, argv[3]);
+        if (!sum)
+        {
+            std::cout << "Could not sum column\n";
+            return 1;
+        }
+
+        std::cout << "Sum of column " << argv[2] << " = " << *sum << "\n";
+
         return 0;
     }
 
