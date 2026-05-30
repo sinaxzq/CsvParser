@@ -1,0 +1,4 @@
+CsvAnalyzer.exe summary expenses.csv
+CsvAnalyzer.exe sum expenses.csv amount
+CsvAnalyzer.exe group-sum expenses.csv category amount
+CsvAnalyzer.exe filter expenses.csv category food
