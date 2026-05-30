@@ -1,8 +1,12 @@
 #include <CsvParser.h>
+#include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <optional>
 #include <sstream>
+#include <string>
+#include <vector>
 
 std::vector<std::string> splitCsvLineSimple(const std::string &line)
 {
@@ -54,4 +58,38 @@ std::optional<CsvTable> loadCsvFromFile(const std::string &filename)
     }
 
     return parseCsvSimple(lines);
+}
+
+std::optional<double> sumColumn(const CsvTable &table, const std::string &columnName)
+{
+    const auto it = std::find(table.headers.begin(), table.headers.end(), columnName);
+
+    if (it == table.headers.end())
+    {
+        return std::nullopt;
+    }
+
+    const std::size_t columnIndex =
+        static_cast<std::size_t>(std::distance(table.headers.begin(), it));
+
+    double sum = 0.0;
+
+    for (const CsvRow &row : table.rows)
+    {
+        if (columnIndex >= row.cells.size())
+        {
+            return std::nullopt;
+        }
+
+        try
+        {
+            sum += std::stod(row.cells[columnIndex]);
+        }
+        catch (...)
+        {
+            return std::nullopt;
+        }
+    }
+
+    return sum;
 }

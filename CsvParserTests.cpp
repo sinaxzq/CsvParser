@@ -101,6 +101,69 @@ void testLoadMissingCsvFileReturnsNullopt()
     assert(!table.has_value());
 }
 
+void testSumColumn()
+{
+    const CsvTable table = parseCsvSimple({
+        "name,amount",
+        "food,12.5",
+        "rent,1000",
+        "coffee,8.25",
+    });
+
+    const std::optional<double> total = sumColumn(table, "amount");
+
+    assert(total.has_value());
+    assert(*total == 1020.75);
+}
+
+void testSumColumnReturnsNulloptForMissingColumn()
+{
+    const CsvTable table = parseCsvSimple({
+        "name,amount",
+        "food,12.5",
+    });
+
+    const std::optional<double> total = sumColumn(table, "missing");
+
+    assert(!total.has_value());
+}
+
+void testSumColumnReturnsNulloptForInvalidNumber()
+{
+    const CsvTable table = parseCsvSimple({
+        "name,amount",
+        "food,abc",
+    });
+
+    const std::optional<double> total = sumColumn(table, "amount");
+
+    assert(!total.has_value());
+}
+
+void testSumColumnReturnsNulloptForShortRow()
+{
+    const CsvTable table = parseCsvSimple({
+        "name,amount",
+        "food",
+    });
+    const std::optional<double> total = sumColumn(table, "amount");
+    assert(!total.has_value());
+}
+
+void testSumColumnCanReturnZero()
+{
+    const CsvTable table = parseCsvSimple({
+        "name,amount",
+        "a,0",
+        "b,0",
+    });
+
+    const std::optional<double> total = sumColumn(table, "amount");
+
+    assert(total.has_value());
+    assert(*total == 0.0);
+}
+
 int main()
 {
     testSplitCsvLineSimple();
@@ -110,5 +173,10 @@ int main()
     testParseOnlyHeaderCsvTableSimple();
     testLoadCsvFromFile();
     testLoadMissingCsvFileReturnsNullopt();
+    testSumColumn();
+    testSumColumnReturnsNulloptForMissingColumn();
+    testSumColumnReturnsNulloptForInvalidNumber();
+    testSumColumnReturnsNulloptForShortRow();
+    testSumColumnCanReturnZero();
     return 0;
 }
