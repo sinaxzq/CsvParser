@@ -2,12 +2,11 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
-#include <iterator>
 #include <optional>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <vector>
-
 std::vector<std::string> splitCsvLineSimple(const std::string &line)
 {
     std::vector<std::string> cells;
@@ -60,18 +59,28 @@ std::optional<CsvTable> loadCsvFromFile(const std::string &filename)
     return parseCsvSimple(lines);
 }
 
-std::optional<double> sumColumn(const CsvTable &table, const std::string &columnName)
+std::optional<std::size_t> findColumnIndex(const CsvTable &table, const std::string &columnName)
 {
-    const auto it = std::find(table.headers.begin(), table.headers.end(), columnName);
-
-    if (it == table.headers.end())
+    for (std::size_t i = 0; i < table.headers.size(); ++i)
     {
-        return std::nullopt;
+        if (table.headers[i] == columnName)
+        {
+            return i;
+        }
     }
 
-    const std::size_t columnIndex =
-        static_cast<std::size_t>(std::distance(table.headers.begin(), it));
+    return std::nullopt;
+}
 
+std::optional<double> sumColumn(const CsvTable &table, const std::string &columnName)
+{
+
+    const auto index = findColumnIndex(table, columnName);
+
+    if (!index)
+        return std ::nullopt;
+
+    std::size_t columnIndex = *index;
     double sum = 0.0;
 
     for (const CsvRow &row : table.rows)
@@ -92,4 +101,48 @@ std::optional<double> sumColumn(const CsvTable &table, const std::string &column
     }
 
     return sum;
+}
+
+std::optional<std::vector<GroupSum>> groupSumColumn(const CsvTable &table,
+                                                    const std::string &groupColumnName,
+                                                    const std::string &valueColumnName)
+{
+    const auto groupColumnIndex = findColumnIndex(table, groupColumnName);
+    const auto valueColumnIndex = findColumnIndex(table, valueColumnName);
+
+    if (!groupColumnIndex || !valueColumnIndex)
+    {
+        return std::nullopt;
+    }
+
+    std::unordered_map<std::string, double> sumGroupsMap;
+
+    for (const auto &row : table.rows)
+    {
+        if (*groupColumnIndex >= row.cells.size() || *valueColumnIndex >= row.cells.size())
+        {
+            return std::nullopt;
+        }
+
+        try
+        {
+            sumGroupsMap[row.cells[*groupColumnIndex]] += std::stod(row.cells[*valueColumnIndex]);
+        }
+        catch (...)
+        {
+            return std::nullopt;
+        }
+    }
+
+    std::vector<GroupSum> sumGroups;
+
+    for (const auto &[group, sum] : sumGroupsMap)
+    {
+        sumGroups.push_back(GroupSum{group, sum});
+    }
+
+    std::sort(sumGroups.begin(), sumGroups.end(),
+              [](const GroupSum &left, const GroupSum &right) { return left.sum > right.sum; });
+
+    return sumGroups;
 }

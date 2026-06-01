@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <optional>
 #include <string>
 #include <vector>
 void testSplitCsvLineSimple()
@@ -163,6 +164,65 @@ void testSumColumnCanReturnZero()
     assert(total.has_value());
     assert(*total == 0.0);
 }
+void testGroupSumColumn()
+{
+    const CsvTable table = parseCsvSimple({
+        "category,amount",
+        "food,12.5",
+        "rent,1000",
+        "food,8",
+    });
+
+    const std::optional<std::vector<GroupSum>> results =
+        groupSumColumn(table, "category", "amount");
+
+    assert(results.has_value());
+    assert(results->size() == 2);
+
+    assert((*results)[0].group == "rent");
+    assert((*results)[0].sum == 1000.0);
+
+    assert((*results)[1].group == "food");
+    assert((*results)[1].sum == 20.5);
+}
+
+void testGroupSumColumnReturnsNulloptForMissingGroupColumn()
+{
+    const CsvTable table = parseCsvSimple({
+        "category,amount",
+        "food,12.5",
+    });
+
+    const std::optional<std::vector<GroupSum>> results = groupSumColumn(table, "missing", "amount");
+
+    assert(!results.has_value());
+}
+
+void testGroupSumColumnReturnsNulloptForInvalidNumber()
+{
+    const CsvTable table = parseCsvSimple({
+        "category,amount",
+        "food,abc",
+    });
+
+    const std::optional<std::vector<GroupSum>> results =
+        groupSumColumn(table, "category", "amount");
+
+    assert(!results.has_value());
+}
+
+void testGroupSumColumnReturnsNulloptForShortRow()
+{
+    const CsvTable table = parseCsvSimple({
+        "category,amount",
+        "food",
+    });
+
+    const std::optional<std::vector<GroupSum>> results =
+        groupSumColumn(table, "category", "amount");
+
+    assert(!results.has_value());
+}
 
 int main()
 {
@@ -178,5 +238,9 @@ int main()
     testSumColumnReturnsNulloptForInvalidNumber();
     testSumColumnReturnsNulloptForShortRow();
     testSumColumnCanReturnZero();
+    testGroupSumColumn();
+    testGroupSumColumnReturnsNulloptForMissingGroupColumn();
+    testGroupSumColumnReturnsNulloptForInvalidNumber();
+    testGroupSumColumnReturnsNulloptForShortRow();
     return 0;
 }
