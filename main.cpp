@@ -11,6 +11,7 @@ void printUsage()
     std::cout << "Usage:\n";
     std::cout << "  CsvAnalyzerApp summary <csv_file>\n";
     std::cout << "  CsvAnalyzerApp sum <csv_file> <column_name>\n";
+    std::cout << "  CsvAnalyzerApp group-sum <csv_file> <group_column> <value_column>\n";
 }
 
 void printSummary(const CsvTable &table)
@@ -26,6 +27,14 @@ void printSummary(const CsvTable &table)
     }
 }
 } // namespace
+
+void printGroupSums(const std::vector<GroupSum> &groupSums)
+{
+    for (const GroupSum &groupSum : groupSums)
+    {
+        std::cout << groupSum.group << " | " << groupSum.sum << "\n";
+    }
+}
 
 int main(int argc, char *argv[])
 {
@@ -68,6 +77,33 @@ int main(int argc, char *argv[])
         }
 
         std::cout << "Sum of column " << argv[2] << " = " << *sum << "\n";
+
+        return 0;
+    }
+    if (command == "group-sum")
+    {
+        if (argc < 5)
+        {
+            std::cout << "Missing columns\n";
+            return 1;
+        }
+
+        const std::optional<CsvTable> table = loadCsvFromFile(filename);
+
+        if (!table)
+        {
+            std::cout << "Could not open file\n";
+            return 1;
+        }
+        std::optional<std::vector<GroupSum>> groups = groupSumColumn(*table, argv[3], argv[4]);
+
+        if (!groups)
+        {
+            std::cout << "Could not sum groups\n";
+            return 1;
+        }
+
+        printGroupSums(*groups);
 
         return 0;
     }
